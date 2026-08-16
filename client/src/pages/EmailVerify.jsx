@@ -1,8 +1,14 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect,useContext } from "react"
+import axios from "axios"
+import { AppContext } from "../context/AppContext"
+import { useNavigate } from "react-router-dom"
 
 const EmailVerify = () => {
+   const navigate = useNavigate()
   const [counter, setCounter] = useState(30)
   const [loading, setLoading] = useState(false)
+   const { backendUrl, getUserData, userData } = useContext(AppContext)
+
   const inputRefs = React.useRef([])
 
   // Focus first input on mount
@@ -69,49 +75,49 @@ const EmailVerify = () => {
       return
     }
 
-    // try {
-    //   axios.defaults.withCredentials = true
+    try {
+      axios.defaults.withCredentials = true
 
-    //   const { data } = await axios.post(`${backendUrl}/api/auth/verify`, {
-    //     otp
-    //   })
+      const { data } = await axios.post(`${backendUrl}/api/auth/verify`, {
+        otp
+      })
 
-    //   if (data.success) {
-    //     toast.success(data.message)
-    //     await getUserData() 
-    //     navigate("/")
-    //   } else {
-    //     toast.error(data.message)
-    //   }
-    // } catch (error) {
-    //   toast.error(error.response?.data?.message || error.message)
-    // } finally {
-    //   setLoading(false)
-    // }
+      if (data.success) {
+        console.log(data.message)
+        await getUserData() 
+        navigate("/dashboard")
+      } else {
+        console.error(data.message)
+      }
+    } catch (error) {
+      console.error(error.response?.data?.message || error.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleResend = async () => {
-    // if (counter > 0) return
+    if (counter > 0) return
 
-    // try {
-    //   axios.defaults.withCredentials = true
-    //   const { data } = await axios.post(`${backendUrl}/api/auth/resend-otp`)
+    try {
+      axios.defaults.withCredentials = true
+      const { data } = await axios.post(`${backendUrl}/api/auth/resend-otp`)
 
-    //   if (data.success) {
-    //     toast.success(data.message)
-    //     setCounter(30)
+      if (data.success) {
+        console.log(data.message)
+        setCounter(30)
 
-    //     // Clear OTP inputs
-    //     inputRefs.current.forEach(input => input.value = '')
-    //     if (inputRefs.current[0]) {
-    //       inputRefs.current[0].focus()
-    //     }
-    //   } else {
-    //     toast.error(data.message)
-    //   }
-    // } catch (error) {
-    //   toast.error(error.response?.data?.message || error.message)
-    // }
+        // Clear OTP inputs
+        inputRefs.current.forEach(input => input.value = '')
+        if (inputRefs.current[0]) {
+          inputRefs.current[0].focus()
+        }
+      } else {
+        console.error(data.message)
+      }
+    } catch (error) {
+      console.error(error.response?.data?.message || error.message)
+    }
   }
 
   // Counter timer

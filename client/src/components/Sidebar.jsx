@@ -1,9 +1,12 @@
 import {CalendarDays, CalendarDaysIcon,LayoutDashboardIcon,SparklesIcon,UserIcon} from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
+import { AppContext } from "../context/AppContext";
+import { useContext } from "react";
 
 
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
+   const {  userData } =useContext(AppContext);
   const location = useLocation();
   const navItems = [
     {
@@ -31,7 +34,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     logout:()=>{
       window.location.href="/"
     },
-    user:{name:"John Doe",email:"john.doe@example.com"}
   }
 
   return (
@@ -89,10 +91,10 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         {/* Footer */}
         <div className='p-4 border-t border-zinc-800'>
           <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-zinc-900 transition-colors">
-            <div className="size-8 rounded-full bg-orange-500/30  flex items-center justify-center text-zinc-100 text-xs font-medium shrink-0">{user.name.charAt(0)}</div>
+            <div className="size-8 rounded-full bg-orange-500/30  flex items-center justify-center text-zinc-100 text-xs font-medium shrink-0">{userData?.name.charAt(0)}</div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xs text-zinc-100 truncate">{user?.name}</h1>
-             <p className="text-xs text-zinc-500 truncate">{user?.email}</p>
+            <h1 className="text-xs text-zinc-100 truncate">{userData?.name}</h1>
+             <p className="text-xs text-zinc-500 truncate">{userData?.email}</p>
           </div>
           </div>
         </div>

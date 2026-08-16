@@ -1,8 +1,10 @@
 import { ActivityIcon, CheckCircleIcon, ClockIcon, SendIcon, Share2Icon, TrendingUp } from 'lucide-react';
-import React, { Activity, useEffect, useState } from 'react'
+import React, { Activity, useEffect, useState,useContext } from 'react'
 import { dummyAccountsData, dummyPostsData, dummyActivityData } from "../assets/assets"
+import { AppContext } from '../context/AppContext';
 
 const Dashboard = () => {
+   const {  userData } =useContext(AppContext);
   const [status, setStatus] = useState({ schedules: 0, published: 0, connectedAccounts: 0 })
   const [activites, setActivites] = useState([]);
   const statusCard = [

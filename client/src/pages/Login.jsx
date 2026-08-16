@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState,useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { AppContext } from '../context/AppContext'
+import axios from "axios";
 import { MailIcon, LockIcon, ArrowRightIcon, User2Icon } from "lucide-react";
 
 export default function Login() {
-
+ const { backendUrl, setIsLoggedIn, getUserData } = useContext(AppContext)
     const [loginState, setLoginState] = useState(true);
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -11,15 +13,59 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setTimeout(() => {
-            setLoading(false);
-            navigate("/dashboard");
-        }, 1000);
-    };
+   const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
+    try {
+        axios.defaults.withCredentials = true;
+
+        let data;
+
+        if (!loginState) {
+            // REGISTER
+            ({ data } = await axios.post(
+                `${backendUrl}/api/auth/register`,
+                {
+                    name,
+                    email,
+                    password,
+                }
+            ));
+        } else {
+            // LOGIN
+            ({ data } = await axios.post(
+                `${backendUrl}/api/auth/login`,
+                {
+                    email,
+                    password,
+                }
+            ));
+        }
+
+        if (data.success) {
+            setIsLoggedIn(true);
+
+            await getUserData();
+
+            // Your registration response doesn't currently
+            // return userData, so don't rely on data.userData here.
+            if (!loginState) {
+                navigate("/verify-email");
+            } else {
+                navigate("/");
+            }
+        } else {
+            console.error(data.message);
+        }
+    } catch (error) {
+        console.error(
+            error.response?.data?.message || error.message
+        );
+    } finally {
+        setLoading(false);
+    }
+};
     return (
         <div className="min-h-screen bg-[#0A0A0E] flex items-center justify-center p-4">
             <div className="relative w-full max-w-md">
@@ -77,9 +123,9 @@ export default function Login() {
                                 onClick={() => navigate("/reset-password")}
                                 className="text-zinc-100  text-xs cursor-pointer "
                             >
-                                If you forgot your password, you can 
+                                If you forgot your password, you can
                                 <span className="text-orange-400 capitalize text-sm font-semibold hover:text-orange-500 ml-1">Reset it !</span>
-                               
+
                             </p>
                         )}
 

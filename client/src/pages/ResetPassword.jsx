@@ -1,12 +1,18 @@
 import { LockIcon, MailIcon } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useState,useContext } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { AppContext } from '../context/AppContext'
+import axios from 'axios'
+
 
 const ResetPassword = () => {
+    const navigate =useNavigate()
     const [email, setEmail] = useState('')
     const [isEmailSent, setIsEmailSent] = useState("")
     const [otp, setOtp] = useState(0)
     const [isOtpSubmited, setIsOtpSubmited] = useState(false)
     const [newPassword, setNewPasssword] = useState('')
+    const { backendUrl, setIsLoggedIn, getUserData, userData } =useContext(AppContext);
 
     const inputRefs = React.useRef([]);
 
@@ -33,13 +39,13 @@ const ResetPassword = () => {
     };
     const onSubmitEmail = async (e) => {
         e.preventDefault();
-        // try {
-        //     const { data } = await axios.post(`${backendUrl}/api/auth/forget-password`, { email });
-        //     data.success ? toast.success(data.message) : toast.error(data.message)
-        //     data.success && setIsEmailSent(true)
-        // } catch (error) {
-        //     toast.error(error.response?.data?.message || error.message);
-        // }
+        try {
+            const { data } = await axios.post(`${backendUrl}/api/auth/forget-password`, { email });
+            data.success ? console.log(data.message) : console.error(data.message)
+            data.success && setIsEmailSent(true)
+        } catch (error) {
+            console.error(error.response?.data?.message || error.message);
+        }
     };
     const onSubmitOtp = async (e) => {
         e.preventDefault(); // ✅ prevent form reload
@@ -49,13 +55,13 @@ const ResetPassword = () => {
     };
     const onSbmitNewPassword = async (e) => {
         e.preventDefault()
-        // try {
-        //     const { data } = await axios.post(`${backendUrl}/api/auth/reset-password`, { email, newPassword, otp });
-        //     data.success ? toast.success(data.message) : toast.error(data.message)
-        //     data.success && navigate('/login')
-        // } catch (error) {
-        //     toast.error(error.response?.data?.message || error.message);
-        // }
+        try {
+            const { data } = await axios.post(`${backendUrl}/api/auth/reset-password`, { email, newPassword, otp });
+            data.success ? console.log(data.message) : console.error(data.message)
+            data.success && navigate('/login')
+        } catch (error) {
+            console.error(error.response?.data?.message || error.message);
+        }
     }
 
     return (
