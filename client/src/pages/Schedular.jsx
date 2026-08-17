@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { dummyPostsData, getPlatformColor, PLATFORMS } from "../assets/assets";
+import React, { useEffect, useState,useContext } from "react";
+import {  getPlatformColor, PLATFORMS } from "../assets/assets";
 import { AlertCircleIcon, ArrowRightIcon, Calendar1Icon, Clock1, Loader2Icon, SendIcon, TimerIcon, UploadIcon, XIcon } from "lucide-react";
-
+import {AppContext} from "../context/AppContext"
+import axios from "axios";
 
 const Schedular = () => {
+  const {backendUrl} = useContext(AppContext)
   const [posts, setPosts] = useState([]);
   const [content, setContent] = useState("");
   const [ScheduledTime, setScheduledTime] = useState("");
@@ -11,28 +13,99 @@ const Schedular = () => {
   const [selectedPlatform, setSelectedPlatform] = useState([]);
   const [mediaFile, setMediaFile] = useState(null);
   const [loading, setLoading] = useState(false);
+ 
   const FetchPosts = async () => {
-    setPosts(dummyPostsData);
-  };
+     try {
+      axios.defaults.withCredentials = true
+       const {data} = await axios.get(`${backendUrl}/api/post`)
+       setPosts(data.posts)
+        console.log("Sync SuccessFully")
+    } catch (error) {
+      console.log(error?.response?.data?.message || error?.message);
+    }
+  }
+
+  const sheduled = posts.filter((p) => p.status === "scheduled");
+  const published = posts.filter((p) => p.status === "published");
+
+  const togglePlatform = (id) =>
+    setSelectedPlatform((prev) =>
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
+    );
+  
+
+ const handleSchedule = async (e) => {
+  e.preventDefault();
+
+  if (selectedPlatform.length === 0) {
+    console.log("Select at least one platform");
+    return;
+  }
+
+  if (!scheduledDate || !ScheduledTime) {
+    console.log("Please enter schedule date and time");
+    return;
+  }
+
+  if (!mediaFile) {
+    console.log("Media file is required");
+    return;
+  }
+
+  const scheduledFor = new Date(
+    `${scheduledDate} ${ScheduledTime}`
+  ).toISOString();
+
+  const formData = new FormData();
+
+  formData.append("content", content);
+  formData.append("scheduledFor", scheduledFor);
+  formData.append("status", "scheduled");
+  formData.append(
+    "platform",
+    JSON.stringify(selectedPlatform)
+  );
+
+  formData.append("media", mediaFile);
+
+  setLoading(true);
+
+  try {
+    axios.defaults.withCredentials = true;
+
+    await axios.post(
+      `${backendUrl}/api/post/`,
+      formData
+    );
+
+    console.log("Post Scheduled Successfully");
+
+    setContent("");
+    setSelectedPlatform([]);
+    setScheduledDate("");
+    setScheduledTime("");
+    setMediaFile(null)
+
+    await FetchPosts();
+
+  } catch (error) {
+    console.log(
+      error?.response?.data?.message ||
+      error?.message
+    );
+
+  } finally {
+    // IMPORTANT
+    setLoading(false);
+  }
+};
+
   useEffect(() => {
     (async () => await FetchPosts())();
     const interval = setInterval(async () => await FetchPosts(), 1000);
     return () => clearInterval(interval);
   }, []);
-  const sheduled = posts.filter((p) => p.status === "scheduled");
-  const published = posts.filter((p) => p.status === "published");
-  const togglePlatform = (id) =>
-    setSelectedPlatform((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
-    );
-  const handleSchedule = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setPosts((prev) => [...prev, dummyPostsData]);
-    }, 1000);
-  };
+ 
   return (
     <div className="flex flex-col lg:flex-row gap-6 h-full">
       <div className="w-full lg:w-[460px] shrink-0">
@@ -233,7 +306,7 @@ const Schedular = () => {
                     <div className="flex items-center gap-3 min-w-0">
                       {/* Platforms */}
                       <div className="flex items-center gap-1.5 shrink-0">
-                        {post.platforms.map((p) => {
+                        {post.platform.map((p) => {
                           const meta = PLATFORMS.find(
                             (platform) => platform.id === p
                           );
@@ -317,7 +390,7 @@ const Schedular = () => {
                     <div className="flex items-center gap-3 min-w-0">
                       {/* Platforms */}
                       <div className="flex items-center gap-1.5 shrink-0">
-                        {post.platforms.map((p) => {
+                        {post.platform.map((p) => {
                           const meta = PLATFORMS.find(
                             (platform) => platform.id === p
                           );

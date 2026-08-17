@@ -1,10 +1,11 @@
 import { ActivityIcon, CheckCircleIcon, ClockIcon, SendIcon, Share2Icon, TrendingUp } from 'lucide-react';
 import React, { Activity, useEffect, useState,useContext } from 'react'
-import { dummyAccountsData, dummyPostsData, dummyActivityData } from "../assets/assets"
+
 import { AppContext } from '../context/AppContext';
+import axios from 'axios';
 
 const Dashboard = () => {
-   const {  userData } =useContext(AppContext);
+   const {  backendUrl } =useContext(AppContext);
   const [status, setStatus] = useState({ schedules: 0, published: 0, connectedAccounts: 0 })
   const [activites, setActivites] = useState([]);
   const statusCard = [
@@ -13,21 +14,51 @@ const Dashboard = () => {
     { label: 'Connected Accounts', value: status.connectedAccounts, icon: Share2Icon, trend: "Active" }
   ]
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const [postsRes, accountsRes, activitiesRes] = [{ data: dummyPostsData }, { data: dummyAccountsData }, { data: dummyActivityData }]
-        const posts = postsRes.data;
-        setStatus({
-          schedules: posts.filter((post) => post.status === "scheduled").length,
-          published: posts.filter((post) => post.status === "published").length,
-          connectedAccounts: accountsRes.data.filter((a) => a.status === "connected").length,
-        })
-        setActivites(activitiesRes.data)
-      } catch (err) {
-        console.error("Error fetching dashboard data:", err);
+  const fetchDashboardData = async () => {
+  try {
+    const [postsRes, accountsRes, activitiesRes] = await Promise.all([
+      axios.get(`${backendUrl}/api/post`, {
+        withCredentials: true,
+      }),
+      axios.get(`${backendUrl}/api/account`, {
+        withCredentials: true,
+      }),
+      axios.get(`${backendUrl}/api/activity`, {
+        withCredentials: true,
+      }),
+    ]);
 
-      }
-    }
+    const posts = postsRes.data.posts || [];
+    const accounts = accountsRes.data.accounts || [];
+    const activities = activitiesRes.data.activity || [];
+
+    console.log("Posts:", posts);
+    console.log("Accounts:", accounts);
+    console.log("Activities:", activities);
+
+    setStatus({
+      schedules: posts.filter(
+        (post) => post.status === "scheduled"
+      ).length,
+
+      published: posts.filter(
+        (post) => post.status === "published"
+      ).length,
+
+      connectedAccounts: accounts.filter(
+        (account) => account.status === "connected"
+      ).length,
+    });
+
+    setActivites(activities);
+
+  } catch (err) {
+    console.error(
+      "Error fetching dashboard data:",
+      err.response?.data || err.message
+    );
+  }
+};
     fetchDashboardData()
   }, [])
   return (

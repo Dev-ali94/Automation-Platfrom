@@ -1,0 +1,49 @@
+import mongoose from "mongoose";
+
+const activityLogSchema = new mongoose.Schema(
+    {
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+        },
+
+        actionType: {
+            type: String,
+            enum: [
+                "POST_PUBLISHED",
+                "POST_PUBLISH_FAILED",
+                "AI_REPLAY",
+            ],
+            required: true,
+        },
+
+        description: {
+            type: String,
+            required: true,
+        },
+
+        relatedPost: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Post",
+        },
+
+        platform: {
+            type: String,
+        },
+
+        aiGeneratedtext: {
+            type: String,
+        },
+    },
+    {
+        timestamps: true,
+    }
+);
+
+export const ActivityLog = mongoose.model(
+    "ActivityLog",
+    activityLogSchema
+);
+
+export default ActivityLog;

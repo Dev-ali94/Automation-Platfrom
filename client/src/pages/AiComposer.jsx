@@ -1,8 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,useContext } from "react";
 import { dummyGenerationData, getPlatformColor, PLATFORMS } from "../assets/assets";
+import axios from "axios"
+import {AppContext} from "../context/AppContext"
 import { AlertCircleIcon, ArrowRightIcon, Calendar1Icon, Clock1, HistoryIcon, Loader2Icon, TimerIcon, UploadIcon, XIcon } from "lucide-react";
 
 const AiComposer = () => {
+  const {backendUrl} = useContext(AppContext)
   const [promt, setPromt] = useState("");
   const [tone, setTone] = useState("Professional");
   const [loading, setLoading] = useState(false);
@@ -14,17 +17,143 @@ const AiComposer = () => {
   const [scheduleTime, setScheduleTime] = useState("")
   const [scheduling, setScheduling] = useState(false)
   const tones = ["Professional", "Creative", "Funny", "Excited", "Minimalistic"]
+
   const fetchGenerations = async () => {
-    setGeneration(dummyGenerationData)
+      try {
+      axios.defaults.withCredentials = true
+       const {data} = await axios.get(`${backendUrl}/api/generation`)
+       setGeneration(data.generations)
+        console.log("generation fucth SuccessFully")
+    } catch (error) {
+      console.log(error?.response?.data?.message || error?.message);
+    }
   }
-  useEffect(() => {
-    fetchGenerations()
-  }, [])
+
+ const handleSchedulePost = async () => {
+
+    if (!activeSchedular?._id) {
+        console.log("Please select a generation");
+        return;
+    }
+
+    if (selectedPlatforms.length === 0) {
+        console.log("Select at least one platform");
+        return;
+    }
+
+    if (!scheduleDate || !scheduleTime) {
+        console.log("Please enter schedule date and time");
+        return;
+    }
+
+    if (!mediaFile) {
+        console.log("Media file is required");
+        return;
+    }
+
+    console.log("Active Scheduler:", activeSchedular);
+    console.log("Generation ID:", activeSchedular._id);
+
+    const scheduledFor = new Date(
+        `${scheduleDate}T${scheduleTime}`
+    ).toISOString();
+
+    const formData = new FormData();
+
+    formData.append(
+        "generationId",
+        activeSchedular._id
+    );
+
+    formData.append(
+        "scheduledFor",
+        scheduledFor
+    );
+
+    formData.append(
+        "platform",
+        JSON.stringify(selectedPlatforms)
+    );
+
+    formData.append("media", mediaFile);
+
+    setLoading(true);
+
+    try {
+        const { data } = await axios.post(
+            `${backendUrl}/api/generation/post`,
+            formData,
+            {
+                withCredentials: true
+            }
+        );
+
+        console.log("Post scheduled successfully:", data);
+
+        fetchGenerations();
+
+    } catch (error) {
+        console.error(
+            "Schedule Error:",
+            error?.response?.data?.message ||
+            error?.message
+        );
+    } finally {
+        setLoading(false);
+    }
+};
 
   const togglePlatform = (id) =>
     setSelectedPlatforms((prev) =>
       prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
     );
+const handleGeneration = async () => {
+  if (!promt.trim()) {
+    console.log("Prompt is required");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const { data } = await axios.post(
+      `${backendUrl}/api/generation/generate`,
+      {
+        promt: promt.trim(),
+        tone,
+      },
+      {
+        withCredentials: true,
+      }
+    );
+
+    console.log("Created:", data.generations);
+
+    // Add new generation immediately to UI
+    setGeneration((prev) => [
+      data.generations,
+      ...prev,
+    ]);
+
+    // Open scheduler with the newly created generation
+    setActiveSchedular(data.generations);
+
+  } catch (error) {
+    console.error(
+      "Generation Error:",
+      error?.response?.data?.message || error?.message
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+    
+
+  useEffect(() => {
+    fetchGenerations()
+  }, [])
+
+ 
   return (
     <div className="max-w-4xl mx-auto space-y-12 pb-20 animate-in fade-in duration-500">
       {/* Composer */}
@@ -45,6 +174,7 @@ const AiComposer = () => {
 
           <div className="absolute bottom-4 right-2.5 flex items-center gap-3 text-sm">
             <button
+            onClick={handleGeneration}
               type="button"
               disabled={loading || !promt.trim()}
               className="bg-orange-500 border  text-zinc-100 border-orange-600 hover:bg-orange-600 hover:text-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 px-4 py-2 rounded-lg transition"
@@ -164,7 +294,7 @@ const AiComposer = () => {
             </div>
             <div className="flex-1 overflow-y-auto p-8 space-y-4">
               <div className="bg-zinc-800/40 text-sm leading-relaxed whitespace-pre-wrap rounded-2xl text-zinc-300 p-4 border border-zinc-700/40 space-y-4">
-                <p>{activeSchedular.prompt}</p>
+                <p>{activeSchedular.promt}</p>
               </div>
               <div className="bg-zinc-800/40 text-sm leading-relaxed whitespace-pre-wrap rounded-2xl text-zinc-300 p-4 border border-zinc-700/40 space-y-4">
                 <p>{activeSchedular.content}</p>
@@ -283,7 +413,7 @@ const AiComposer = () => {
               </div>
             </div>
               </div>
-              <button type="submit" disabled={loading} className="w-full flex items-center justify-center 
+              <button onClick={handleSchedulePost} type="submit" disabled={loading} className="w-full flex items-center justify-center 
                           gap-2 py-3.5 group border border-orange-500/30 bg-orange-500/15 hover:bg-orange-500  rounded-2xl text-sm font-medium transition-colors  disabled:cursor-not-allowed">
                             {loading ? (
                               <>
