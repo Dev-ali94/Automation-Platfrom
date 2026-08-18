@@ -2,38 +2,59 @@ import zernio from "../config/zernio.js"
 import {User} from "../models/User.js"
 import {Account} from "../models/Account.js"
 
-// create zernio profile
 export const getOrCreateZernioProfile = async (user) => {
     try {
         const result = await zernio.profiles.listProfiles();
+
         const data = result.data;
-        const profiles = Array.isArray(data)? data: data?.profiles || data?.profile || data?.data || [];
+
+        const profiles = Array.isArray(data)
+            ? data
+            : data?.profiles || data?.profile || data?.data || [];
+
+        // Existing profile
         if (profiles.length > 0) {
             const pid = profiles[0]._id || profiles[0].id;
+
             if (!pid) {
-                throw new Error("Existing zernio profile has no id!");
+                throw new Error("Zernio profile ID not found");
             }
-            await User.findByIdAndUpdate(user._id,{ zernioProfileId: pid })
+
+            await User.findByIdAndUpdate(
+                user._id,
+                { zernioProfileId: pid }
+            );
+
             return pid;
         }
 
+        // Create new profile
         const createResult = await zernio.profiles.createProfile({
-            body: {name: `${user.name || user.email}'s workspace`}
+            body: {
+                name: `${user.name || user.email}'s workspace`
+            }
         });
 
         const created = createResult.data?.profile || createResult.data;
+
         const pid = created?._id || created?.id;
 
         if (!pid) {
-            throw new Error("No ID found, Zernio profile creation failed")
+            throw new Error(
+                "No ID found, Zernio profile creation failed"
+            );
         }
 
-        await User.findByIdAndUpdate(user._id,{ zernioProfileId: pid })
+        await User.findByIdAndUpdate(
+            user._id,
+            { zernioProfileId: pid }
+        );
+
         return pid;
 
     } catch (error) {
-       console.error("Error Found While creating Profile:",error?.message || error)
-       throw error
+        console.error("Error while creating Zernio profile:", error);
+        throw error;
     }
 };
 
@@ -61,11 +82,10 @@ export const generateAuthUrl = async (req, res) => {
         if (!authUrl) {
             return res.status(500).json({success: false,message: "Zernio did not return authentication URL",data: data});
         }
-        return res.status(200).json({success: true,url: authUrl});
+        return res.status(200).json({success: true,url:authUrl,message:"Authentication url Created",});
 
     } catch (error) {
-        console.error("Error while creating zernio authUrl:",error?.message || error);
-        throw error
+        return res.status(500).json({success:false,message:"Error while creating profile",error:error?.message || error})
     }
 };
 
@@ -118,10 +138,9 @@ export const syncedAccount = async (req, res) => {
             syncedAccounts.push(account);
         }
 
-        return res.status(200).json({success: true,message: "Accounts synced successfully", accounts: syncedAccounts})
+        return res.status(200).json({success: true,message: "Accounts Connected successfully", accounts: syncedAccounts})
 
     } catch (error) {
-        console.error("Error while syncing account:",error?.message || error);
-        throw error
+        return res.status(500).json({success:false,message:"Error while synced account",error:error?.message || error})
     }
 };

@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
 import { ArrowRightIcon } from "lucide-react";
+import { useContext } from "react";
 
-export default function Navbar() {
-    const { user } = { user: false };
+export default function Navbar({user}) {
+   
 
     return (
         <nav className="sticky top-0 z-50 bg-[#0A0A0E] backdrop-blur-lg border-b border-zinc-800">
@@ -24,7 +25,7 @@ export default function Navbar() {
                 </div>
 
                 {user ? (
-                    <Link to="/dashboard" className="flex items-center gap-1.5 text-sm font-medium bg-orange-500/10 hover:bg-orange-600 text-orange-500  px-4 py-2 rounded-full shadow-sm hover:shadow-orange-200 hover:shadow-md">
+                    <Link to="/dashboard" className="flex items-center gap-1.5 text-sm font-medium bg-orange-500/15 hover:bg-orange-500 hover:text-white border border-orange-500/30 hover:border-none text-orange-400  px-4 py-2 rounded-full">
                         Go to Dashboard <ArrowRightIcon className="size-3.5" />
                     </Link>
                 ) : (

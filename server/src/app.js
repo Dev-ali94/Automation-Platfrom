@@ -1,7 +1,6 @@
 import express from 'express'
 import cookieParser from "cookie-parser";
 import authRoute from "../src/routes/authRoute.js"
-import userRoute from "../src/routes/userAuth.js"
 import socialAccountRoute from "../src/routes/socialAuthRoute.js"
 import accountRoutes from "../src/routes/accountRoutes.js"
 import generationRoutes from "../src/routes/generationRoutes.js"
@@ -22,7 +21,6 @@ app.use(cors({
 }));
 
 app.use('/api/auth', authRoute);
-app.use('/api/user', userRoute);
 app.use('/api/social-auth', socialAccountRoute);
 app.use('/api/account', accountRoutes);
 app.use('/api/generation', generationRoutes);

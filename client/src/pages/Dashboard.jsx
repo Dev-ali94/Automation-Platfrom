@@ -1,11 +1,9 @@
 import { ActivityIcon, CheckCircleIcon, ClockIcon, SendIcon, Share2Icon, TrendingUp } from 'lucide-react';
 import React, { Activity, useEffect, useState,useContext } from 'react'
-
-import { AppContext } from '../context/AppContext';
-import axios from 'axios';
+import api from '../config/axios';
+import toast from "react-hot-toast"
 
 const Dashboard = () => {
-   const {  backendUrl } =useContext(AppContext);
   const [status, setStatus] = useState({ schedules: 0, published: 0, connectedAccounts: 0 })
   const [activites, setActivites] = useState([]);
   const statusCard = [
@@ -17,13 +15,13 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
   try {
     const [postsRes, accountsRes, activitiesRes] = await Promise.all([
-      axios.get(`${backendUrl}/api/post`, {
+      api.get("/api/post", {
         withCredentials: true,
       }),
-      axios.get(`${backendUrl}/api/account`, {
+      api.get("/api/account", {
         withCredentials: true,
       }),
-      axios.get(`${backendUrl}/api/activity`, {
+      api.get("/api/activity", {
         withCredentials: true,
       }),
     ]);
@@ -31,11 +29,6 @@ const Dashboard = () => {
     const posts = postsRes.data.posts || [];
     const accounts = accountsRes.data.accounts || [];
     const activities = activitiesRes.data.activity || [];
-
-    console.log("Posts:", posts);
-    console.log("Accounts:", accounts);
-    console.log("Activities:", activities);
-
     setStatus({
       schedules: posts.filter(
         (post) => post.status === "scheduled"
@@ -52,11 +45,8 @@ const Dashboard = () => {
 
     setActivites(activities);
 
-  } catch (err) {
-    console.error(
-      "Error fetching dashboard data:",
-      err.response?.data || err.message
-    );
+  } catch (error) {
+    toast.error( error?.response?.data?.message || error?.message);
   }
 };
     fetchDashboardData()

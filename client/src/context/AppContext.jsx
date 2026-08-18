@@ -1,10 +1,8 @@
-import axios from "axios"
 import { createContext, useEffect, useState } from "react"
-
+import api from "../config/axios"
 export const AppContext = createContext()
 
 export const AppContextProvider = (props) => {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userData, setUserData] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
@@ -12,7 +10,7 @@ export const AppContextProvider = (props) => {
   // Check auth state
   const getAuthState = async () => {
     try {
-      const { data } = await axios.get(`${backendUrl}/api/auth/auth`, {
+      const { data } = await api.get("/api/auth/auth", {
         withCredentials: true,
       })
 
@@ -34,7 +32,7 @@ export const AppContextProvider = (props) => {
   //  Fetch user data
   const getUserData = async () => {
     try {
-      const { data } = await axios.get(`${backendUrl}/api/user/data`, {
+      const { data } = await api.get("/api/auth/data", {
         withCredentials: true,
       })
 
@@ -54,7 +52,6 @@ export const AppContextProvider = (props) => {
   }, [])
 
   const value = {
-    backendUrl,
     isLoggedIn,
     setIsLoggedIn,
     userData,

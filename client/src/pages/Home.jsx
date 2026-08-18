@@ -6,11 +6,13 @@ import Testimonials from "../components/Home/Testimonials";
 import Pricing from "../components/Home/Pricing";
 import CTA from "../components/Home/CTA";
 import Footer from "../components/Home/Footer";
-
+import { useContext } from "react";
+import {AppContext} from "../context/AppContext"
 export default function Landing() {
+    const {userData} = useContext(AppContext)
     return (
         <div className="min-h-screen bg-white text-slate-900 font-sans">
-            <Navbar />
+            <Navbar user={userData} />
             <Hero />
             <Features />
             <HowItWorks />
@@ -21,3 +23,4 @@ export default function Landing() {
         </div>
     );
 }
+

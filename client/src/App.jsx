@@ -10,38 +10,46 @@ import EmailVerify from "./pages/EmailVerify";
 import ResetPassword from "./pages/ResetPassword";
 import VerifyEmailRoute from "./config/ProtectedVerifyRoute";
 import ProtectedRoute from "./config/ProtectedRoute";
+import { Toaster } from "react-hot-toast";
 
 export default function App() {
     return (
-        <Routes>
-            {/* Public routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
+        <>
+            <Toaster position="top-right" />
 
-            <Route
-                path="/verify-email"
-                element={
-                    <VerifyEmailRoute>
-                        <EmailVerify />
-                    </VerifyEmailRoute>
-                }
-            />
+            <Routes>
+                {/* Public routes */}
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
 
-            <Route path="/reset-password" element={<ResetPassword />} />
+                <Route
+                    path="/verify-email"
+                    element={
+                        <VerifyEmailRoute>
+                            <EmailVerify />
+                        </VerifyEmailRoute>
+                    }
+                />
 
-            {/* Protected routes */}
-            <Route
-                element={
-                    <ProtectedRoute>
-                        <Layout />
-                    </ProtectedRoute>
-                }
-            >
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/schedular" element={<Schedular />} />
-                <Route path="/account" element={<Account />} />
-                <Route path="/ai-composer" element={<AiComposer />} />
-            </Route>
-        </Routes>
+                <Route
+                    path="/reset-password"
+                    element={<ResetPassword />}
+                />
+
+                {/* Protected routes */}
+                <Route
+                    element={
+                        <ProtectedRoute>
+                            <Layout />
+                        </ProtectedRoute>
+                    }
+                >
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/schedular" element={<Schedular />} />
+                    <Route path="/account" element={<Account />} />
+                    <Route path="/ai-composer" element={<AiComposer />} />
+                </Route>
+            </Routes>
+        </>
     );
 }

@@ -1,11 +1,10 @@
 import React, { useEffect, useState,useContext } from "react";
 import {  getPlatformColor, PLATFORMS } from "../assets/assets";
 import { AlertCircleIcon, ArrowRightIcon, Calendar1Icon, Clock1, Loader2Icon, SendIcon, TimerIcon, UploadIcon, XIcon } from "lucide-react";
-import {AppContext} from "../context/AppContext"
-import axios from "axios";
+import api from "../config/axios";
+import toast from "react-hot-toast"
 
 const Schedular = () => {
-  const {backendUrl} = useContext(AppContext)
   const [posts, setPosts] = useState([]);
   const [content, setContent] = useState("");
   const [ScheduledTime, setScheduledTime] = useState("");
@@ -16,12 +15,10 @@ const Schedular = () => {
  
   const FetchPosts = async () => {
      try {
-      axios.defaults.withCredentials = true
-       const {data} = await axios.get(`${backendUrl}/api/post`)
+       const {data} = await api.get("/api/post/",{withCredentials:true})
        setPosts(data.posts)
-        console.log("Sync SuccessFully")
     } catch (error) {
-      console.log(error?.response?.data?.message || error?.message);
+      toast.error(error?.response?.data?.message || error?.message);
     }
   }
 
@@ -38,61 +35,40 @@ const Schedular = () => {
   e.preventDefault();
 
   if (selectedPlatform.length === 0) {
-    console.log("Select at least one platform");
+    toast.error("Select at least one platform");
     return;
   }
 
   if (!scheduledDate || !ScheduledTime) {
-    console.log("Please enter schedule date and time");
+    toast.error("Please enter schedule date and time");
     return;
   }
 
   if (!mediaFile) {
-    console.log("Media file is required");
+    toast.error("Media file is required");
     return;
   }
 
-  const scheduledFor = new Date(
-    `${scheduledDate} ${ScheduledTime}`
-  ).toISOString();
+  const scheduledFor = new Date(`${scheduledDate} ${ScheduledTime}`).toISOString();
 
   const formData = new FormData();
-
   formData.append("content", content);
   formData.append("scheduledFor", scheduledFor);
   formData.append("status", "scheduled");
-  formData.append(
-    "platform",
-    JSON.stringify(selectedPlatform)
-  );
-
+  formData.append("platform",JSON.stringify(selectedPlatform));
   formData.append("media", mediaFile);
-
   setLoading(true);
-
   try {
-    axios.defaults.withCredentials = true;
-
-    await axios.post(
-      `${backendUrl}/api/post/`,
-      formData
-    );
-
-    console.log("Post Scheduled Successfully");
-
+    await api.post("/api/post/schedule",formData,{withCredentials:true});
+    toast.success("Post Scheduled Successfully");
     setContent("");
     setSelectedPlatform([]);
-    setScheduledDate("");
+    setSheduledDate("");
     setScheduledTime("");
     setMediaFile(null)
-
     await FetchPosts();
-
   } catch (error) {
-    console.log(
-      error?.response?.data?.message ||
-      error?.message
-    );
+    toast.error(error?.response?.data?.message ||error?.message);
 
   } finally {
     // IMPORTANT

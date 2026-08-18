@@ -1,10 +1,9 @@
-import openRouter from "../services/openRouter.js";
+import openRouter from "../config/openRouter.js";
 import { cloudinary } from "../config/Cloudinary.js";
 import { Generation } from "../models/Generation.js";
 import {Post} from "../models/Post.js"
 
 export const createGeneration = async (req, res) => {
-    const user = req.user;
     try {
         const { promt, tone } = req.body;
         if (!promt) {
@@ -29,47 +28,32 @@ export const createGeneration = async (req, res) => {
         }
         const content = parsedResponse.content;
         const generations = await Generation.create({
-            user: user._id,
+            user: req.user._id,
             promt,
             content:content,
             tone: tone || "professional",
         });
 
         // Send final response
-        return res.status(200).json({success: true, generations});
+        return res.status(200).json({success: true,message:"The post are generated according to your prompt", generations});
 
     } catch (error) {
-        console.error("Error in generatePost:", error);
         return res.status(500).json({ success: false,message: "Failed to generate post",error: error.message});
     }
 };
 
-
 export const getGenerationData = async (req,res) => {
-    const user = req.user
     try {
         const generations = await Generation.find({user:req.user._id}).sort({createdAt:-1})
-        res.json({success:true,message:"Geeration fetched successfully",generations})
+        res.json({success:true,message:"Generation fetched successfully",generations})
     } catch (error) {
-          return res.status(500).json({ success: false,message: "Failed to fetch post",error: error.message});
+          return res.status(500).json({ success: false,message: "Failed to fetch generated post",error: error.message});
     }
 }
 
-
-
-
-
-
-
 export const createPostFromGeneration = async (req, res) => {
     try {
-        const user = req.user;
-
-        const {
-            generationId,
-            scheduledFor,
-            platform
-        } = req.body;
+        const {generationId,scheduledFor,platform} = req.body;
 
         // Validate required fields
         if (!generationId) {
@@ -96,7 +80,7 @@ export const createPostFromGeneration = async (req, res) => {
         // Find generation belonging to logged-in user
         const generation = await Generation.findOne({
             _id: generationId,
-            user: user._id
+            user: req.user._id
         });
 
         if (!generation) {
@@ -150,37 +134,24 @@ export const createPostFromGeneration = async (req, res) => {
 
         // Create post using generated content
         const post = await Post.create({
-            user: user._id,
-
-            // Get content directly from Generation
+            user: req.user._id,
             content: generation.content,
-
             platform: parsedPlatform,
-
             mediaUrl,
             mediaType,
-
             scheduledFor,
-
             status: "scheduled",
-
-            // Optional: keep reference to original generation
             generation: generation._id
         });
 
-        return res.status(201).json({
-            success: true,
-            message: "Post scheduled successfully",
-            post
-        });
+        return res.status(201).json({success: true,message: "Post scheduled successfully"});
 
     } catch (error) {
-        console.error("createPostFromGeneration error:", error);
-
         return res.status(500).json({
             success: false,
-            message: "Failed to create scheduled post",
-            error: error.message
+            message: "Failed to scheduled post",
+            error: error.message || error
         });
     }
 };
+

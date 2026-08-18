@@ -1,14 +1,15 @@
-import React, { useState, useEffect,useContext } from "react"
+import React, { useState, useEffect, useContext } from "react"
 import axios from "axios"
 import { AppContext } from "../context/AppContext"
 import { useNavigate } from "react-router-dom"
+import api from "../config/axios"
+import toast from "react-hot-toast"
 
 const EmailVerify = () => {
-   const navigate = useNavigate()
+  const navigate = useNavigate()
   const [counter, setCounter] = useState(30)
   const [loading, setLoading] = useState(false)
-   const { backendUrl, getUserData, userData } = useContext(AppContext)
-
+  const { getUserData, userData } = useContext(AppContext)
   const inputRefs = React.useRef([])
 
   // Focus first input on mount
@@ -62,35 +63,27 @@ const EmailVerify = () => {
   const SubmitHandler = async (e) => {
     e.preventDefault()
     setLoading(true)
-
     // Collect OTP
     const otpArray = inputRefs.current.map((input) => input.value)
     const otp = otpArray.join('')
-
     // Validate OTP length
     if (otp.length !== 6) {
       console.log("otp is greater then 6 number");
-
       setLoading(false)
       return
     }
 
     try {
-      axios.defaults.withCredentials = true
-
-      const { data } = await axios.post(`${backendUrl}/api/auth/verify`, {
-        otp
-      })
-
+      const { data } = await api.post("/api/auth/verify", { otp }, { withCredentials: true })
       if (data.success) {
-        console.log(data.message)
-        await getUserData() 
+       toast.success("Email verified SuccessFully")
+        await getUserData()
         navigate("/dashboard")
       } else {
-        console.error(data.message)
+        toast.error(data.message)
       }
     } catch (error) {
-      console.error(error.response?.data?.message || error.message)
+      toast.error(error.response?.data?.message || error.message)
     } finally {
       setLoading(false)
     }
@@ -100,23 +93,21 @@ const EmailVerify = () => {
     if (counter > 0) return
 
     try {
-      axios.defaults.withCredentials = true
-      const { data } = await axios.post(`${backendUrl}/api/auth/resend-otp`)
+      const { data } = await api.post("/api/auth/resend-otp", {}, { withCredentials: true })
 
       if (data.success) {
-        console.log(data.message)
+         toast.success("Otp is resnd to your email")
         setCounter(30)
-
         // Clear OTP inputs
         inputRefs.current.forEach(input => input.value = '')
         if (inputRefs.current[0]) {
           inputRefs.current[0].focus()
         }
       } else {
-        console.error(data.message)
+        toast.error(data.message)
       }
     } catch (error) {
-      console.error(error.response?.data?.message || error.message)
+      toast.error(error.response?.data?.message || error.message)
     }
   }
 

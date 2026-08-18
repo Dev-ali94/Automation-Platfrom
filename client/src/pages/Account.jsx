@@ -1,56 +1,53 @@
-import { useEffect, useState, useContext } from "react";
-import { dummyAccountsData, PLATFORMS } from "../assets/assets";
+import { useEffect, useState } from "react";
+import { PLATFORMS } from "../assets/assets";
 import { PlusIcon } from "lucide-react";
 import AccountList from "../components/AccountList";
 import PlatformPickerModel from "../components/PlatformPickerModel";
-import axios from "axios"
-import { AppContext } from "../context/AppContext";
+import toast from "react-hot-toast"
+import api from "../config/axios";
 
 
 const Account = () => {
-  const { backendUrl } = useContext(AppContext)
   const [accounts, setAccounts] = useState([]);
   const [connecting, setConnecting] = useState(null);
   const [platformPicker, setPlatformPicker] = useState(false);
-
+  // fetch account data
   const fetchAcount = async (isSync, platfrom, successMsg) => {
     try {
-      axios.defaults.withCredentials = true
       if (isSync) {
         const label = platfrom ? platfrom.charAt(0).toUpperCase() + platfrom.slice() : "Social Media"
-        await axios.post(`${backendUrl}/api/social-auth/sync`)
-        console.log("Sync SuccessFully");
+        await api.post("/api/social-auth/sync", {}, { withCredentials: true })
+        toast.success("Account Connected Successfully")
       }
-      const { data } = await axios.get(`${backendUrl}/api/account/`)
+      const { data } = await api.get("/api/account/", { withCredentials: true })
       setAccounts(data.accounts)
     } catch (error) {
-      console.log(error?.response?.data?.message || error?.message);
+      toast.error(error.response?.data?.message || error?.message)
     }
-
   }
-   const connectedId = accounts.map((a) => a.platform)
-  
+  const connectedId = accounts.map((a) => a.platform)
+  // handle connect
   const handleConnect = async (platformId) => {
-    setConnecting(platformId)
+    setConnecting(platformId);
     try {
-      axios.defaults.withCredentials = true
-      const { data } = await axios.post(`${backendUrl}/api/social-auth/${platformId}/url`)
-      window.location.href = data.url
+      const { data } = await api.post(`/api/social-auth/${platformId}/url`, {}, { withCredentials: true, });
+      window.location.href = data.url;
     } catch (error) {
-      console.log(error?.response?.data?.message || error?.message);
+      toast.error(error?.response?.data?.message || error?.message)
+    } finally {
+      setConnecting(null);
     }
-  }
+  };
+  // handle deleted
   const handleDisConnectAccount = async (accountId) => {
-    axios.defaults.withCredentials = true
     try {
-        await axios.post(`${backendUrl}/api/account/${accountId}`)
-        console.log("Account disconnected successfully");
-        await fetchAcount()
+      await api.post(`/api/account/${accountId}`, {}, { withCredentials: true })
+      toast.success("Account Disconnected Successfully");
+      await fetchAcount()
     } catch (error) {
-      console.log(error?.response?.data?.message || error?.message);
+      toast.error(error?.response?.data?.message || error?.message);
     }
   }
-
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const connectedPlatform = params.get("connected")
@@ -65,14 +62,14 @@ const Account = () => {
     } else if (errorMsg) {
       console.log(`Error while fetching: ${decodeURIComponent(errorMsg)}`);
       fetchAcount()
-    }else if(syncNeeded){
-   fetchAcount(true,null,"Account synced")
-    }else{
+    } else if (syncNeeded) {
+      fetchAcount(true, null, "Account synced")
+    } else {
       fetchAcount()
     }
   }, [])
 
-  
+
 
   return (
     <div className="space-y-8 max-w-4xl">

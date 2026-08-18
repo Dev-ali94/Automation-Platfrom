@@ -4,7 +4,6 @@ import { Post } from "../models/Post.js";
 export const schedulePost = async (req, res) => {
     try {
         const {scheduledFor,content,platform} = req.body;
-
         // Platform should be a single string
         let parsedPlatform = platform
         if (typeof platform === "string") {
@@ -62,8 +61,6 @@ export const schedulePost = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("schedulePost error:", error);
-
         return res.status(500).json({
             success: false,
             message: "Failed to schedule post",
@@ -73,7 +70,6 @@ export const schedulePost = async (req, res) => {
 };
 
 export const getPostData = async (req,res) => {
-    const user = req.user
     try {
         const posts = await Post.find({user:req.user._id})
         res.json({success:true,message:"Post fetched successfully",posts})

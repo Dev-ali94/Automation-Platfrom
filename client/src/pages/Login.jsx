@@ -1,11 +1,11 @@
-import { useState,useContext } from "react";
+import { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AppContext } from '../context/AppContext'
-import axios from "axios";
 import { MailIcon, LockIcon, ArrowRightIcon, User2Icon } from "lucide-react";
-
+import api from "../config/axios";
+import toast from "react-hot-toast"
 export default function Login() {
- const { backendUrl, setIsLoggedIn, getUserData } = useContext(AppContext)
+    const { setIsLoggedIn, getUserData } = useContext(AppContext)
     const [loginState, setLoginState] = useState(true);
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -13,59 +13,51 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
 
-    try {
-        axios.defaults.withCredentials = true;
-
-        let data;
-
-        if (!loginState) {
-            // REGISTER
-            ({ data } = await axios.post(
-                `${backendUrl}/api/auth/register`,
-                {
-                    name,
-                    email,
-                    password,
-                }
-            ));
-        } else {
-            // LOGIN
-            ({ data } = await axios.post(
-                `${backendUrl}/api/auth/login`,
-                {
-                    email,
-                    password,
-                }
-            ));
-        }
-
-        if (data.success) {
-            setIsLoggedIn(true);
-
-            await getUserData();
-
-            // Your registration response doesn't currently
-            // return userData, so don't rely on data.userData here.
+        try {
+            let data;
             if (!loginState) {
-                navigate("/verify-email");
+                // REGISTER
+                ({ data } = await api.post("/api/auth/register",
+                    {
+                        name,
+                        email,
+                        password,
+                    },
+                    {withCredentials:true}
+                ));
             } else {
-                navigate("/");
+                // LOGIN
+                ({ data } = await api.post("/api/auth/login",
+                    {
+                        email,
+                        password,
+                    },
+                    {withCredentials:true}
+                ));
             }
-        } else {
-            console.error(data.message);
+
+            if (data.success) {
+                setIsLoggedIn(true);
+                await getUserData();
+                if (!loginState) {
+                    navigate("/verify-email");
+                } else {
+                    navigate("/");
+                }
+            } else {
+                toast.error(data.message);
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || error.message
+            );
+        } finally {
+            setLoading(false);
         }
-    } catch (error) {
-        console.error(
-            error.response?.data?.message || error.message
-        );
-    } finally {
-        setLoading(false);
-    }
-};
+    };
     return (
         <div className="min-h-screen bg-[#0A0A0E] flex items-center justify-center p-4">
             <div className="relative w-full max-w-md">

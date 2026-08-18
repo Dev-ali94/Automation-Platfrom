@@ -1,11 +1,9 @@
-import React, { useEffect, useState,useContext } from "react";
-import { dummyGenerationData, getPlatformColor, PLATFORMS } from "../assets/assets";
-import axios from "axios"
-import {AppContext} from "../context/AppContext"
+import React, { useEffect, useState } from "react";
+import { getPlatformColor, PLATFORMS } from "../assets/assets";
+import api from "../config/axios"
 import { AlertCircleIcon, ArrowRightIcon, Calendar1Icon, Clock1, HistoryIcon, Loader2Icon, TimerIcon, UploadIcon, XIcon } from "lucide-react";
-
+import toast from "react-hot-toast"
 const AiComposer = () => {
-  const {backendUrl} = useContext(AppContext)
   const [promt, setPromt] = useState("");
   const [tone, setTone] = useState("Professional");
   const [loading, setLoading] = useState(false);
@@ -18,142 +16,86 @@ const AiComposer = () => {
   const [scheduling, setScheduling] = useState(false)
   const tones = ["Professional", "Creative", "Funny", "Excited", "Minimalistic"]
 
+  // fetch generation
   const fetchGenerations = async () => {
-      try {
-      axios.defaults.withCredentials = true
-       const {data} = await axios.get(`${backendUrl}/api/generation`)
-       setGeneration(data.generations)
-        console.log("generation fucth SuccessFully")
+    try {
+      const { data } = await api.get("/api/generation", { withCredentials: true })
+      setGeneration(data.generations)
     } catch (error) {
-      console.log(error?.response?.data?.message || error?.message);
+      toast.error(error?.response?.data?.message || error?.message);
     }
   }
+  const handleGeneration = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.post("/api/generation/generate",{promt: promt.trim(),tone,},{withCredentials: true,});
+      toast.success("Ai Generated post is created")
+      setPromt("")
+      setGeneration((prev) => [data.generations,...prev,]);
+      setActiveSchedular(data.generations);
 
- const handleSchedulePost = async () => {
+    } catch (error) {
+     toast.error(error?.response?.data?.message || error?.message)
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const handleSchedulePost = async () => {
     if (!activeSchedular?._id) {
-        console.log("Please select a generation");
-        return;
+      toast.error("Please select a generation");
+      return;
     }
 
     if (selectedPlatforms.length === 0) {
-        console.log("Select at least one platform");
-        return;
+      toast.error("Select at least one platform");
+      return;
     }
 
     if (!scheduleDate || !scheduleTime) {
-        console.log("Please enter schedule date and time");
-        return;
+      toast.error("Please enter schedule date and time");
+      return;
     }
 
     if (!mediaFile) {
-        console.log("Media file is required");
-        return;
+      toast.error("Media file is required");
+      return;
     }
 
-    console.log("Active Scheduler:", activeSchedular);
-    console.log("Generation ID:", activeSchedular._id);
-
-    const scheduledFor = new Date(
-        `${scheduleDate}T${scheduleTime}`
-    ).toISOString();
-
+    const scheduledFor = new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
     const formData = new FormData();
-
-    formData.append(
-        "generationId",
-        activeSchedular._id
-    );
-
-    formData.append(
-        "scheduledFor",
-        scheduledFor
-    );
-
-    formData.append(
-        "platform",
-        JSON.stringify(selectedPlatforms)
-    );
-
+    formData.append("generationId",activeSchedular._id);
+    formData.append("scheduledFor",scheduledFor);
+    formData.append("platform",JSON.stringify(selectedPlatforms));
     formData.append("media", mediaFile);
-
     setLoading(true);
-
     try {
-        const { data } = await axios.post(
-            `${backendUrl}/api/generation/post`,
-            formData,
-            {
-                withCredentials: true
-            }
-        );
-
-        console.log("Post scheduled successfully:", data);
-
-        fetchGenerations();
+      const { data } = await api.post("/api/generation/schedule", formData, { withCredentials: true }
+      );
+      toast.success("Post Scheduled Successfully")
+      setMediaFile(null)
+      setScheduleDate("")
+      setScheduleTime("")
+      setSelectedPlatforms([])
+      fetchGenerations();
 
     } catch (error) {
-        console.error(
-            "Schedule Error:",
-            error?.response?.data?.message ||
-            error?.message
-        );
+      toast.error(error?.response?.data?.message ||error?.message);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-};
+  };
 
   const togglePlatform = (id) =>
     setSelectedPlatforms((prev) =>
       prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
     );
-const handleGeneration = async () => {
-  if (!promt.trim()) {
-    console.log("Prompt is required");
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const { data } = await axios.post(
-      `${backendUrl}/api/generation/generate`,
-      {
-        promt: promt.trim(),
-        tone,
-      },
-      {
-        withCredentials: true,
-      }
-    );
-
-    console.log("Created:", data.generations);
-
-    // Add new generation immediately to UI
-    setGeneration((prev) => [
-      data.generations,
-      ...prev,
-    ]);
-
-    // Open scheduler with the newly created generation
-    setActiveSchedular(data.generations);
-
-  } catch (error) {
-    console.error(
-      "Generation Error:",
-      error?.response?.data?.message || error?.message
-    );
-  } finally {
-    setLoading(false);
-  }
-};
-    
 
   useEffect(() => {
     fetchGenerations()
   }, [])
 
- 
+
   return (
     <div className="max-w-4xl mx-auto space-y-12 pb-20 animate-in fade-in duration-500">
       {/* Composer */}
@@ -174,7 +116,7 @@ const handleGeneration = async () => {
 
           <div className="absolute bottom-4 right-2.5 flex items-center gap-3 text-sm">
             <button
-            onClick={handleGeneration}
+              onClick={handleGeneration}
               type="button"
               disabled={loading || !promt.trim()}
               className="bg-orange-500 border  text-zinc-100 border-orange-600 hover:bg-orange-600 hover:text-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 px-4 py-2 rounded-lg transition"
@@ -373,60 +315,60 @@ const handleGeneration = async () => {
                 </div>
               </div>
               <div className="bg-zinc-800/40 rounded-2xl text-zinc-300 p-4 border border-zinc-700/40">
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {/* Date */}
-              <div>
-                <label className="block text-xs text-zinc-200 uppercase mb-2">
-                  Date
-                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {/* Date */}
+                  <div>
+                    <label className="block text-xs text-zinc-200 uppercase mb-2">
+                      Date
+                    </label>
 
-                <div className="relative">
-                  <Calendar1Icon className="size-4 absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                    <div className="relative">
+                      <Calendar1Icon className="size-4 absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400 pointer-events-none" />
 
-                  <input
-                    value={scheduleDate}
-                    onChange={(e) => setScheduleDate(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-zinc-800/40 border border-zinc-700/40 rounded-xl text-zinc-300 text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/30 transition-all duration-200"
-                    type="date"
-                    required
-                  />
+                      <input
+                        value={scheduleDate}
+                        onChange={(e) => setScheduleDate(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 bg-zinc-800/40 border border-zinc-700/40 rounded-xl text-zinc-300 text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/30 transition-all duration-200"
+                        type="date"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Time */}
+                  <div>
+                    <label className="block text-xs uppercase text-zinc-200  mb-2">
+                      Time
+                    </label>
+
+                    <div className="relative">
+                      <Clock1 className="size-4 absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+
+                      <input
+                        value={scheduleTime}
+                        onChange={(e) => setScheduleTime(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 bg-zinc-800/40 border border-zinc-700/40 rounded-xl text-zinc-300 text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/30 transition-all duration-200"
+                        type="time"
+                        required
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-
-              {/* Time */}
-              <div>
-                <label className="block text-xs uppercase text-zinc-200  mb-2">
-                  Time
-                </label>
-
-                <div className="relative">
-                  <Clock1 className="size-4 absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400 pointer-events-none" />
-
-                  <input
-                    value={scheduleTime}
-                    onChange={(e) => setScheduleTime(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-zinc-800/40 border border-zinc-700/40 rounded-xl text-zinc-300 text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/30 transition-all duration-200"
-                    type="time"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
               </div>
               <button onClick={handleSchedulePost} type="submit" disabled={loading} className="w-full flex items-center justify-center 
                           gap-2 py-3.5 group border border-orange-500/30 bg-orange-500/15 hover:bg-orange-500  rounded-2xl text-sm font-medium transition-colors  disabled:cursor-not-allowed">
-                            {loading ? (
-                              <>
-                                <Loader2Icon className="size-4 text-orange-500 animate-spin group-hover:text-zinc-100" />
-                                <span className="text-orange-500 group-hover:text-zinc-100 text-sm font-medium uppercase">Loading</span>
-                              </>
-                            ) : (
-                              <>
-                                <TimerIcon className="size-4 text-orange-500 group-hover:text-zinc-100" />
-                                <span className="text-orange-500 group-hover:text-zinc-100 text-sm font-medium uppercase">schedule post </span>
-                              </>
-                            )}
-                          </button>
+                {loading ? (
+                  <>
+                    <Loader2Icon className="size-4 text-orange-500 animate-spin group-hover:text-zinc-100" />
+                    <span className="text-orange-500 group-hover:text-zinc-100 text-sm font-medium uppercase">Loading</span>
+                  </>
+                ) : (
+                  <>
+                    <TimerIcon className="size-4 text-orange-500 group-hover:text-zinc-100" />
+                    <span className="text-orange-500 group-hover:text-zinc-100 text-sm font-medium uppercase">schedule post </span>
+                  </>
+                )}
+              </button>
 
             </div>
           </div>

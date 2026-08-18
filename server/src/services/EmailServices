@@ -54,16 +54,12 @@ const generateResetPasswordEmailHTML = (otp) => `
 // Send OTP
 export const sendOtp = async (userEmail, otp) => {
   if (userEmail.toLowerCase() === process.env.EMAIL_USER.toLowerCase()) {
-    console.log(`Not sending OTP to sender email: ${userEmail}`);
-
-    return {
-      status: "skipped",
-      message: "Not sent to sender email",
-    };
+    throw new Error(`Not sending OTP to sender email: ${userEmail}`);
+    return {status: "skipped",message: "Not sent to sender email",success:false};
   }
 
   const mailOptions = {
-    from: `"AskMe" <${process.env.EMAIL_USER}>`,
+    from: `"Schedular" <${process.env.EMAIL_USER}>`,
     to: userEmail,
     subject: "Your Verification Code",
     html: OtpMessageBox(otp),
@@ -75,35 +71,21 @@ export const sendOtp = async (userEmail, otp) => {
   };
 
   try {
-    const info = await transporter.sendMail(mailOptions);
-
-    console.log(`OTP sent to ${userEmail}`);
-
-    return {
-      status: "sent",
-      info,
-    };
+    const info = await transporter.sendMail(mailOptions)
+    return {success:true,message:"Email verification otp sent to your email",status: "sent",info,}
   } catch (error) {
-    console.error("Failed to send OTP email:", error);
-    throw new Error("Failed to send OTP email");
+    throw new Error("Failed to send OTP email",error);
   }
 };
 
 // Send password reset email
 export const sendPasswordResetEmail = async (email, otp) => {
   if (email.toLowerCase() === process.env.EMAIL_USER.toLowerCase()) {
-    console.log(
-      `[SKIPPED] Not sending password reset to sender email: ${email}`
-    );
-
-    return {
-      status: "skipped",
-      message: "Not sent to sender email",
-    };
-  }
+    throw new Error(`[SKIPPED] Not sending password reset to sender email: ${email}`);
+    return {status: "skipped",message: "Not sent to sender email",success:false}}
 
   const mailOptions = {
-    from: `"Auth System" <${process.env.EMAIL_USER}>`,
+    from: `"Schedular" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: "Your Password Reset Code",
     html: generateResetPasswordEmailHTML(otp),
@@ -116,16 +98,8 @@ export const sendPasswordResetEmail = async (email, otp) => {
 
   try {
     const info = await transporter.sendMail(mailOptions);
-
-    console.log(`[SENT] Password reset email to ${email}`);
-
-    return {
-      status: "sent",
-      info,
-    };
+    return {message:"Password reset otp send to your email",success:true,status: "sent",info,}
   } catch (error) {
-    console.error("[ERROR] Failed to send password reset email:", error);
-
-    throw new Error("Failed to send password reset email");
+    throw new Error("Failed to send password reset email",error);
   }
 };

@@ -75,16 +75,11 @@ export const registration = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: "Registration successful. Please check your email for OTP verification.",
+      message: "Registration successfully. Please check your email for OTP verification.",
     });
 
   } catch (error) {
-    console.error("Registration error:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Registration error, please try again later",
-    });
+    return res.status(500).json({success: false,message: "Registration error, please try again later",error:error?.message || error});
   }
 };
 // verify email
@@ -97,7 +92,7 @@ export const verifyEmail = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found",
+        message: "User not found with that email",
       });
     }
 
@@ -144,10 +139,6 @@ export const verifyEmail = async (req, res) => {
       });
     }
 
-    // ===============================
-    // VERIFY ACCOUNT
-    // ===============================
-
     user.AccountVerified = true;
 
     // Remove OTP after successful verification
@@ -162,11 +153,11 @@ export const verifyEmail = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("VERIFY EMAIL ERROR:", error);
 
     return res.status(500).json({
       success: false,
       message: "Email verification failed",
+      error:error?.message || error
     });
   }
 };
@@ -179,7 +170,7 @@ export const resendOTP = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found",
+        message: "User not  found with that email",
       });
     }
 
@@ -191,9 +182,6 @@ export const resendOTP = async (req, res) => {
       });
     }
 
-    // ===============================
-    // GENERATE NEW OTP
-    // ===============================
 
     const otp = crypto.randomInt(100000, 1000000).toString();
 
@@ -203,8 +191,6 @@ export const resendOTP = async (req, res) => {
     // Update OTP
     user.otp = otp;
 
-    // IMPORTANT:
-    // Schema field is expireOtp
     user.expireOtp = otpExpiry;
 
     // Update OTP information
@@ -222,12 +208,32 @@ export const resendOTP = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Resend OTP error:", error);
-
     return res.status(500).json({
       success: false,
       message: "Failed to resend OTP",
+       error:error?.message || error
     });
+  }
+};
+export const getUserData = async (req, res) => {
+  try {
+    const userId = req.user.id; 
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.json({ success: false, message: "User not found with that credientials" });
+    }
+
+    res.json({
+      success: true,
+      userData: {
+        id:user._id,
+        name: user.name,
+        email: user.email,
+        verified: user.AccountVerified,
+      },
+    });
+  } catch (error) {
+    return res.json({success:false,message:"Error while fetching user data", error:error?.message || error});
   }
 };
 // User login
@@ -263,15 +269,23 @@ export const login = async (req, res) => {
       message: "login sucessfuly",
     });
   } catch (error) {
-    console.error("login error:", error.message);
-    res.json({ error: "Login error, please try again" });
+   return res.status(500).json({
+      success: false,
+      message: "Failed to Login",
+       error:error?.message || error
+    });
+  
   }
 }
 export const isAuthenticated = async (req, res) => {
   try {
     return res.json({ success: true })
   } catch (error) {
-    res.json({ success: false, message: error.message })
+    return res.status(500).json({
+      success: false,
+      message: "Failed to check authorization",
+       error:error?.message || error
+    });
   }
 }
 // User Logout
@@ -289,8 +303,11 @@ export const logout = async (req, res) => {
       message: "logout sucessfuly",
     });
   } catch (error) {
-    console.error("logout error:", error.message);
-    res.json({ error: "Logout error, please try again" });
+   return res.status(500).json({
+      success: false,
+      message: "Failed to logout",
+       error:error?.message || error
+    });
   }
 }
 // forget password with otp send 
@@ -313,8 +330,12 @@ export const forgetPassword = async (req, res) => {
     await sendPasswordResetEmail(email, newOtp);
     return res.json({ success: true, message: "Please check your email for OTP verification" })
   } catch (error) {
-    console.error("logout error:", error.message);
-    res.json({ error: "Logout error, please try again" });
+   return res.status(500).json({
+      success: false,
+      message: "Failed to forgetPassword",
+       error:error?.message || error
+    });
+  
   }
 }
 // reset password and verify otp
@@ -341,6 +362,10 @@ export const resetpassword = async (req, res) => {
     return res.json({ success: true, message: "Password successfully change" })
   } catch (error) {
     console.error("logout error:", error.message);
-    res.json({ error: "Logout error, please try again" });
+    return res.status(500).json({
+      success: false,
+      message: "Failed to resetPassword",
+       error:error?.message || error
+    });
   }
 }

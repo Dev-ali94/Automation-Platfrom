@@ -1,12 +1,12 @@
 import  express from 'express'
-import userAuth from '../middlewares/AuthMiddleware.js'
+import protect from '../middlewares/AuthMiddleware.js'
 import {upload} from "../config/multer.js"
 import { getPostData, schedulePost } from '../controllers/postController.js';
 
 
 const router = express.Router();
 
-router.post("/",userAuth,upload.single("media") ,schedulePost)
-router.get("/",userAuth,getPostData)
+router.post("/schedule",protect,upload.single("media") ,schedulePost)
+router.get("/",protect,getPostData)
 
 export default  router

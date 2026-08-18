@@ -2,8 +2,8 @@ import { LockIcon, MailIcon } from 'lucide-react'
 import React, { useState,useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppContext } from '../context/AppContext'
-import axios from 'axios'
-
+import api from '../config/axios'
+import toast from "react-hot-toast"
 
 const ResetPassword = () => {
     const navigate =useNavigate()
@@ -12,7 +12,7 @@ const ResetPassword = () => {
     const [otp, setOtp] = useState(0)
     const [isOtpSubmited, setIsOtpSubmited] = useState(false)
     const [newPassword, setNewPasssword] = useState('')
-    const { backendUrl, setIsLoggedIn, getUserData, userData } =useContext(AppContext);
+    const { setIsLoggedIn, getUserData, userData } =useContext(AppContext);
 
     const inputRefs = React.useRef([]);
 
@@ -40,15 +40,15 @@ const ResetPassword = () => {
     const onSubmitEmail = async (e) => {
         e.preventDefault();
         try {
-            const { data } = await axios.post(`${backendUrl}/api/auth/forget-password`, { email });
-            data.success ? console.log(data.message) : console.error(data.message)
+            const { data } = await api.post("/api/auth/forget-password", { email });
+            data.success ? toast.success(data.message) : toast.error(data.message)
             data.success && setIsEmailSent(true)
         } catch (error) {
-            console.error(error.response?.data?.message || error.message);
+            toast.error(error.response?.data?.message || error.message);
         }
     };
     const onSubmitOtp = async (e) => {
-        e.preventDefault(); // ✅ prevent form reload
+        e.preventDefault(); 
         const otpArray = inputRefs.current.map((e) => e.value);
         setOtp(otpArray.join(""))
         setIsOtpSubmited(true)
@@ -56,11 +56,11 @@ const ResetPassword = () => {
     const onSbmitNewPassword = async (e) => {
         e.preventDefault()
         try {
-            const { data } = await axios.post(`${backendUrl}/api/auth/reset-password`, { email, newPassword, otp });
-            data.success ? console.log(data.message) : console.error(data.message)
+            const { data } = await api.post("/api/auth/reset-password", { email, newPassword, otp });
+            data.success ? toast.success(data.message) : toast.error(data.message)
             data.success && navigate('/login')
         } catch (error) {
-            console.error(error.response?.data?.message || error.message);
+            toast.error(error.response?.data?.message || error.message);
         }
     }
 

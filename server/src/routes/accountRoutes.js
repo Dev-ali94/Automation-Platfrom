@@ -1,11 +1,10 @@
 import  express from 'express'
-import userAuth from '../middlewares/AuthMiddleware.js'
-import { addAccount, disConnectAccount, getUserAccount } from '../controllers/accountController.js'
+import { disConnectAccount, getUserAccount } from '../controllers/accountController.js'
+import protect from '../middlewares/AuthMiddleware.js'
 const router = express.Router()
 
-router.get("/",userAuth, getUserAccount)
-router.post("/",userAuth,addAccount)
-router.post("/:id", userAuth, disConnectAccount)
+router.get("/",protect, getUserAccount)
+router.post("/:id", protect, disConnectAccount)
 
 
 export default  router
