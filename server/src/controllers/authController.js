@@ -2,8 +2,7 @@ import { User } from "../models/User.js";
 import bcrypt from "bcrypt"
 import crypto from "crypto"
 import jwt from "jsonwebtoken"
-import {sendOtp} from "../services/EmailServices";
-import { sendPasswordResetEmail } from "../services/EmailServices";
+import {sendOtp,sendPasswordResetEmail} from "../services/EmailServices";
 
 // register
 export const registration = async (req, res) => {
